@@ -15,7 +15,9 @@ services:
       - neo4j-logs:/logs
 
   app:
-    build: .
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     image: canonweaver/app:latest
     container_name: canonweaver-app
     depends_on:
