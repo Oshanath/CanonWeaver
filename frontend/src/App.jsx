@@ -1,11 +1,13 @@
-import {Box, Button, Stack, Toolbar, Typography} from '@mui/material';
+import {Box} from '@mui/material';
 import CWAppBar from './CWAppBar.jsx'
+import CWWorkspace from "./CWWorkspace.jsx";
 
 function App() {
   return (
-    <Box>
-      <CWAppBar />
-    </Box>
+      <Box sx={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+        <CWAppBar />
+        <CWWorkspace />
+      </Box>
   );
 }
 

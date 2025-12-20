@@ -15,7 +15,7 @@ function CWAppBar() {
     };
 
     return (
-        <Box sx={{ flexGrow: 1 }}>
+        <Box>
             <AppBar position="static">
                 <Toolbar>
                     <IconButton edge="start" onClick={() => console.log("logo click")} sx={{ mr: 1 }}>
