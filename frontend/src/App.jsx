@@ -1,22 +1,10 @@
-import { Box, Button, Stack, Typography } from '@mui/material';
+import {Box, Button, Stack, Toolbar, Typography} from '@mui/material';
+import CWAppBar from './CWAppBar.jsx'
 
 function App() {
   return (
-    <Box
-      minHeight="100vh"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      sx={{ bgcolor: 'background.default', color: 'text.primary' }}
-    >
-      <Stack spacing={2} alignItems="center">
-        <Typography variant="h4" component="h1">
-          CanonWeaver
-        </Typography>
-        <Button variant="contained" size="large">
-          Get Started
-        </Button>
-      </Stack>
+    <Box>
+      <CWAppBar />
     </Box>
   );
 }
