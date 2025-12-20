@@ -1,5 +1,7 @@
 import {Box, Paper} from "@mui/material";
 import {Group, Panel, Separator} from "react-resizable-panels";
+import CWManuscriptExplorer from "./CWManuscriptExplorer.jsx";
+import CWEditor from "./CWEditor.jsx";
 
 function CWExplorerEditor() {
     return (
@@ -7,7 +9,7 @@ function CWExplorerEditor() {
             <Group style={{ height: "100%" }}   >
                 <Panel defaultSize={"20%"} collapsible minSize={5}>
                     <Paper elevation={5} sx={{ height: "100%", p: 1 }}>
-                        Explorer
+                        <CWManuscriptExplorer />
                     </Paper>
                 </Panel>
 
@@ -21,7 +23,7 @@ function CWExplorerEditor() {
 
                 <Panel>
                     <Paper elevation={5} sx={{ height: "100%", p: 1 }}>
-                        Editor
+                        <CWEditor />
                     </Paper>
                 </Panel>
             </Group>
