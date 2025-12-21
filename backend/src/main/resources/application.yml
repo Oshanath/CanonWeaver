@@ -1,6 +1,17 @@
 spring:
   application:
     name: canonweaver
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/canonweaver}
+    username: ${SPRING_DATASOURCE_USERNAME:canonweaver}
+    password: ${SPRING_DATASOURCE_PASSWORD:canonweaver}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
   neo4j:
     uri: ${NEO4J_URI:bolt://localhost:7687}
     authentication:

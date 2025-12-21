@@ -14,6 +14,25 @@ services:
       - neo4j-data:/data
       - neo4j-logs:/logs
 
+  mysql:
+    image: mysql:8.3
+    container_name: canonweaver-mysql
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: canonweaver
+      MYSQL_USER: canonweaver
+      MYSQL_PASSWORD: canonweaver
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mysql-data:/var/lib/mysql
+
   app:
     build:
       context: ./backend
@@ -22,12 +41,17 @@ services:
     container_name: canonweaver-app
     depends_on:
       - neo4j
+      - mysql
     environment:
       SPRING_NEO4J_URI: bolt://neo4j:7687
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
       SPRING_NEO4J_AUTHENTICATION_PASSWORD: neo4j2
       NEO4J_dbms_security_auth__minimum__password__length: 2
       SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/canonweaver
+      SPRING_DATASOURCE_USERNAME: canonweaver
+      SPRING_DATASOURCE_PASSWORD: canonweaver
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
     ports:
       - "8080:8080"
     restart: unless-stopped
@@ -49,3 +73,4 @@ services:
 volumes:
   neo4j-data:
   neo4j-logs:
+  mysql-data:
