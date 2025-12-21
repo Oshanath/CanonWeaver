@@ -1,31 +1,14 @@
 package org.canonweaver.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
-@Entity
-@Table(name = "manuscripts")
 public class Manuscript {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false, length = 200)
     private String title;
-
-    @Column(nullable = false, length = 120)
     private String author;
-
-    @Column(name = "year_written")
     private Integer yearWritten;
 
     public Manuscript() {
-        // JPA requires a default constructor
+        // Default constructor
     }
 
     public Manuscript(Long id, String title, String author, Integer yearWritten) {

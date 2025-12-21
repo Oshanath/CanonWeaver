@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS manuscripts (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    author VARCHAR(120) NOT NULL,
+    year_written INT
+);
