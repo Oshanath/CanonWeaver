@@ -1,6 +1,4 @@
-CREATE TABLE IF NOT EXISTS manuscripts (
+CREATE TABLE IF NOT EXISTS blocks (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(200) NOT NULL,
-    author VARCHAR(120) NOT NULL,
-    year_written INT
+    content TEXT NOT NULL
 );
