@@ -21,12 +21,12 @@ function CWEditor(props) {
     const [draftBlocks, setDraftBlocks] = React.useState({});
 
     return (
-        <Box sx={{ height: "100%", overflowY: "auto" }}>
+        <Box sx={{ height: "100%", overflowY: "auto", p: 2, boxSizing: "border-box" }}>
             {isPending ? <CircularProgress /> :
                 data.map(block => {
                     if (block.isSaved){
                         return (
-                            <Card key={block.id} sx={{ width: '100%', p: 2, m:2, background: "rgba(0,0,255,0.04)" }}>
+                            <Card key={block.id} sx={{ width: "100%", p: 2, mb: 2, background: "rgba(0,0,255,0.04)" }}>
                                 <Typography variant="body1" component="div">
                                     {block.content}
                                 </Typography>
@@ -41,14 +41,14 @@ function CWEditor(props) {
                                 multiline
                                 fullWidth
                                 minRows={3}
-                                sx={{ m: 2 }}
+                                sx={{ mb: 2 }}
                                 onChange={e => {onBlockChange(block.id, e.target.value)}}
                             />
                         )
                     }
                 })
             }
-            <Button onClick={addBlockMutation.mutate} variant="contained" sx={{m:2}}>+ Block</Button>
+            <Button onClick={addBlockMutation.mutate} variant="contained">+ Block</Button>
         </Box>
     )
 
