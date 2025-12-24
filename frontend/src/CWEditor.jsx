@@ -1,5 +1,6 @@
-import {Box, Card, TextField, Typography} from "@mui/material";
+import {Box, Button, Card, CircularProgress, TextField, Typography} from "@mui/material";
 import React from "react";
+import {useQuery} from "@tanstack/react-query";
 
 function CWEditor(props) {
 
@@ -12,23 +13,39 @@ function CWEditor(props) {
         setEditableBlock(editableBlock.value)
     }
 
+    const {data, isPending} = useQuery({
+        queryKey: ["blocks"],
+        queryFn: getBlocks,
+    })
+
     return (
         <Box>
-            <Card sx={{ width: '100%', p: 2, m:2, background: "rgba(0,0,255,0.04)" }}>
-                <Typography variant="body1" component="div">
-                    {para1}
-                </Typography>
-            </Card>
-            <TextField
-                value={editableBlock}
-                multiline
-                fullWidth
-                minRows={3}
-                sx={{ m: 2 }}
-                onChange={handleEditableBlockOnChange}
-            />
+            {isPending ? <CircularProgress /> :
+                data.map(block => {
+                    return (
+                        <Card key={block.id} sx={{ width: '100%', p: 2, m:2, background: "rgba(0,0,255,0.04)" }}>
+                            <Typography variant="body1" component="div">
+                                {block.content}
+                            </Typography>
+                        </Card>
+                    )
+                })}
+            {/*<TextField*/}
+            {/*    value={editableBlock}*/}
+            {/*    multiline*/}
+            {/*    fullWidth*/}
+            {/*    minRows={3}*/}
+            {/*    sx={{ m: 2 }}*/}
+            {/*    onChange={handleEditableBlockOnChange}*/}
+            {/*/>*/}
+            <Button variant="contained" sx={{m:2}}>+ Block</Button>
         </Box>
     )
+}
+
+const getBlocks = async () => {
+    const response = await fetch("/api/blocks")
+    return await response.json()
 }
 
 export default CWEditor;
