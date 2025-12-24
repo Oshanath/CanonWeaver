@@ -11,45 +11,38 @@ function CWEditor(props) {
         queryKey: blocksQueryKey,
         queryFn: getBlocks,
     })
-    React.useEffect(() => {
-        if (!isPending) {
-            data.map((block) => {
-                let newBlocksContent = blocksContent;
-                newBlocksContent[block.id] = block.content;
-                setBlocksContent(newBlocksContent);
-            })
-        }
-    }, [isPending]);
-    const [blocksContent, setBlocksContent] = React.useState({});
     const addBlockMutation = useMutation({
         mutationFn: addBlock,
         onSuccess: (data) => {
             queryClient.invalidateQueries({queryKey: blocksQueryKey});
         }
     })
-    console.log(blocksContent)
+
+    const [draftBlocks, setDraftBlocks] = React.useState({});
+
     return (
-        <Box>
+        <Box sx={{ height: "100%", overflowY: "auto" }}>
             {isPending ? <CircularProgress /> :
                 data.map(block => {
                     if (block.isSaved){
                         return (
                             <Card key={block.id} sx={{ width: '100%', p: 2, m:2, background: "rgba(0,0,255,0.04)" }}>
                                 <Typography variant="body1" component="div">
-                                    {blocksContent[block.id]}
+                                    {block.content}
                                 </Typography>
                             </Card>
                         )
                     } else {
+                        const value = draftBlocks[block.id] ?? block.content ?? "";
                         return (
                             <TextField
                                 key={block.id}
-                                value={blocksContent[block.id]}
+                                value={value}
                                 multiline
                                 fullWidth
                                 minRows={3}
                                 sx={{ m: 2 }}
-                                onChange={e => {onBlockChange(e)}}
+                                onChange={e => {onBlockChange(block.id, e.target.value)}}
                             />
                         )
                     }
@@ -59,10 +52,10 @@ function CWEditor(props) {
         </Box>
     )
 
-    function onBlockChange(blockElement) {
-        let newBlocksContent = blocksContent;
-        newBlocksContent[blockElement.key] = blockElement.value;
-        setBlocksContent(newBlocksContent);
+    function onBlockChange(blockId, content) {
+        let newDraftBlocks = {...draftBlocks};
+        newDraftBlocks[blockId] = content;
+        setDraftBlocks(newDraftBlocks);
     }
 }
 
