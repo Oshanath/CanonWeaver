@@ -19,7 +19,8 @@ public class BlockRepository {
 
     private final RowMapper<Block> rowMapper = ((rs, rowNum) -> new Block(
             rs.getLong("id"),
-            rs.getString("content")
+            rs.getString("content"),
+            rs.getBoolean("is_saved")
     ));
 
     public BlockRepository(JdbcTemplate jdbcTemplate) {
@@ -27,6 +28,9 @@ public class BlockRepository {
     }
 
     public Block save(Block block) {
+        if (block.getContent() == null) {
+            block.setContent("");
+        }
         if (block.getId() == null) {
             return insert(block);
         }
@@ -38,9 +42,10 @@ public class BlockRepository {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(con -> {
             PreparedStatement ps = con.prepareStatement("""
-                    INSERT INTO blocks (content) VALUES (?)
+                    INSERT INTO blocks (content, is_saved) VALUES (?, ?)
                     """, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, block.getContent());
+            ps.setBoolean(2, block.isSaved());
             return ps;
         }, keyHolder);
         Number key = keyHolder.getKey();
@@ -53,16 +58,18 @@ public class BlockRepository {
     private void update(Block block) {
         jdbcTemplate.update("""
                 UPDATE blocks
-                SET content = ?
+                SET content = ?,
+                    is_saved = ?
                 WHERE id = ?
                 """,
                 block.getContent(),
+                block.isSaved(),
                 block.getId());
     }
 
     public List<Block> findAll() {
         return jdbcTemplate.query("""
-                SELECT id, content
+                SELECT id, content, is_saved
                 FROM blocks
                 """, rowMapper);
     }

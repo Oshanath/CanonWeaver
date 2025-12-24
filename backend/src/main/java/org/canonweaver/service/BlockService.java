@@ -19,6 +19,10 @@ public class BlockService {
         return blockRepository.save(block);
     }
 
+    public Block update(Block block) {
+        return blockRepository.save(block);
+    }
+
     public List<Block> findAll() {
         return blockRepository.findAll();
     }
