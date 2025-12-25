@@ -11,7 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("api/blocks")
@@ -26,8 +26,8 @@ public class BlockController {
     }
 
     @GetMapping
-    public List<BlockResponse> listBlocks() {
-        return blockDao.toResponses(blockService.findAll());
+    public Map<Long, BlockResponse> listBlocks() {
+        return blockDao.toResponseMap(blockService.findAll());
     }
 
     @PostMapping
