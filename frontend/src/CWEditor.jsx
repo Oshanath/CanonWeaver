@@ -29,32 +29,50 @@ function CWEditor(props) {
     const [draftBlocks, setDraftBlocks] = React.useState({});
     const [changedBlocks, setChangedBlocks] = React.useState({});
     const [errorAlertOpen, setErrorAlertOpen] = React.useState(false);
+    const [errorAlertMessage, setErrorAlertMessage] = React.useState("");
     const [focusedBlockId, setFocusedBlockId] = React.useState(null);
     const saveButtonRefs = React.useRef({});
 
-    const addBlock = async () => {
-        const response = await fetch("/api/blocks", {
-            method: "POST"
-        });
-        return await response.json();
+const addBlock = async () => {
+    const response = await fetch("/api/blocks", {
+        method: "POST"
+    });
+    if (!response.ok) {
+        throw new Error("Failed to add block");
     }
+    return await response.json();
+}
 
-    const getBlocks = async () => {
-        const response = await fetch("/api/blocks")
-        const body = await response.json()
-        return body;
+const getBlocks = async () => {
+    const response = await fetch("/api/blocks")
+    if (!response.ok) {
+        throw new Error("Failed to load blocks");
     }
+    const body = await response.json()
+    return body;
+}
 
     const blocksQueryKey = ["blocks"];
-    const {data, isPending} = useQuery({
+    const {data, isPending, isError} = useQuery({
         queryKey: blocksQueryKey,
         queryFn: getBlocks,
     })
+    React.useEffect(() => {
+        if (!isPending && isError) {
+            setErrorAlertMessage("Failed to load blocks");
+            setErrorAlertOpen(true);
+        }
+    }, [isError, isPending])
+
     const addBlockMutation = useMutation({
         mutationFn: addBlock,
         onSuccess: (data) => {
             queryClient.invalidateQueries({queryKey: blocksQueryKey});
-        }
+        },
+        onError: (error) => {
+            setErrorAlertMessage(error?.message || "Failed to add block");
+            setErrorAlertOpen(true);
+        },
     })
 
     const updateBlock = async (blockId) => {
@@ -86,6 +104,7 @@ function CWEditor(props) {
         },
         onError: (error) => {
             changedBlocks[error.blockId] = true;
+            setErrorAlertMessage(error?.message || "Failed to save block");
             setErrorAlertOpen(true);
         }
     })
@@ -158,7 +177,7 @@ function CWEditor(props) {
     return (
         <Box sx={{ height: "100%", overflowY: "auto", overflowX: "visible", p: 2, pl:0.4, boxSizing: "border-box" }}>
             {isPending ? <CircularProgress /> :
-                Object.keys(data).map(blockId => {
+                data && Object.keys(data).map(blockId => {
 
                     const saveIndicator = (
                         <SaveIndicator isVisible={Boolean(changedBlocks[blockId])} />
@@ -272,7 +291,7 @@ function CWEditor(props) {
                     severity="error"
                     variant="filled"
                 >
-                    Failed to save block
+                    {errorAlertMessage || "Failed to save block"}
                 </Alert>
             </Snackbar>
         </Box>
