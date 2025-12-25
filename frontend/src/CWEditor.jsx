@@ -154,14 +154,30 @@ const getBlocks = async () => {
         console.log("star block", blockId);
     }
 
-    const hoverIconsSx = {
+    function onDeleteBlock(blockId) {
+        console.log("delete block", blockId);
+    }
+
+    const iconRowBaseSx = {
         display: "flex",
         flexDirection: "row",
         gap: 1,
+        justifyContent: "flex-start",
+        alignSelf: "stretch",
+        overflow: "hidden",
+        transition: "opacity 0.15s ease, max-height 0.2s ease, margin-top 0.2s ease",
+    };
+    const iconRowVisibleSx = {
+        opacity: 1,
+        pointerEvents: "auto",
+        maxHeight: 40,
+        mt: 1,
+    };
+    const iconRowHiddenSx = {
         opacity: 0,
-        transition: "opacity 0.15s ease",
         pointerEvents: "none",
-        alignSelf: "center",
+        maxHeight: 0,
+        mt: 0,
     };
     const rowSx = {
         display: "flex",
@@ -183,17 +199,17 @@ const getBlocks = async () => {
                         <SaveIndicator isVisible={Boolean(changedBlocks[blockId])} />
                     );
 
+                    const isBlockFocused = focusedBlockId === blockId;
+
                     if (data[blockId].isLocked){
                         return (
                             <Box
                                 key={blockId}
                                 sx={{
                                     ...rowSx,
-                                    "&:hover .cw-block-icons": { opacity: 1, pointerEvents: "auto" },
                                 }}
-                                tabIndex={0}
-                                onFocus={() => setFocusedBlockId(blockId)}
-                                onClick={() => setFocusedBlockId(blockId)}
+                                onMouseEnter={() => setFocusedBlockId(blockId)}
+                                onMouseLeave={() => setFocusedBlockId(null)}
                             >
                                 {saveIndicator}
                                 <Box sx={contentSx}>
@@ -208,21 +224,25 @@ const getBlocks = async () => {
                                             {data[blockId].content}
                                         </Typography>
                                     </Card>
+                                    <CWBlockIcons
+                                        className="cw-block-icons"
+                                        sx={{
+                                            ...iconRowBaseSx,
+                                            ...(isBlockFocused ? iconRowVisibleSx : iconRowHiddenSx),
+                                        }}
+                                        onSave={() => onSaveBlock(blockId)}
+                                        onLock={() => onLockBlock(blockId)}
+                                        onStar={() => onStarBlock(blockId)}
+                                        onDelete={() => onDeleteBlock(blockId)}
+                                        saveButtonRef={node => {
+                                            if (node) {
+                                                saveButtonRefs.current[blockId] = node;
+                                            } else {
+                                                delete saveButtonRefs.current[blockId];
+                                            }
+                                        }}
+                                    />
                                 </Box>
-                                <CWBlockIcons
-                                    className="cw-block-icons"
-                                    sx={hoverIconsSx}
-                                    onSave={() => onSaveBlock(blockId)}
-                                    onLock={() => onLockBlock(blockId)}
-                                    onStar={() => onStarBlock(blockId)}
-                                    saveButtonRef={node => {
-                                        if (node) {
-                                            saveButtonRefs.current[blockId] = node;
-                                        } else {
-                                            delete saveButtonRefs.current[blockId];
-                                        }
-                                    }}
-                                />
                             </Box>
                         )
                     } else {
@@ -232,6 +252,11 @@ const getBlocks = async () => {
                                 key={blockId}
                                 sx={rowSx}
                                 data-block-id={blockId}
+                                tabIndex={-1}
+                                onFocus={() => setFocusedBlockId(blockId)}
+                                onMouseDown={(event) => {
+                                    event.currentTarget.focus();
+                                }}
                                 onBlur={(event) => {
                                     if (!event.currentTarget.contains(event.relatedTarget)) {
                                         setFocusedBlockId(null);
@@ -248,25 +273,25 @@ const getBlocks = async () => {
                                         onChange={e => {onBlockChange(blockId, e.target.value)}}
                                         onFocus={() => setFocusedBlockId(blockId)}
                                     />
+                                    <CWBlockIcons
+                                        className="cw-block-icons"
+                                        sx={{
+                                            ...iconRowBaseSx,
+                                            ...(isBlockFocused ? iconRowVisibleSx : iconRowHiddenSx),
+                                        }}
+                                        onSave={() => {onSaveBlock(blockId)}}
+                                        onLock={() => onLockBlock(blockId)}
+                                        onStar={() => onStarBlock(blockId)}
+                                        onDelete={() => onDeleteBlock(blockId)}
+                                        saveButtonRef={node => {
+                                            if (node) {
+                                                saveButtonRefs.current[blockId] = node;
+                                            } else {
+                                                delete saveButtonRefs.current[blockId];
+                                            }
+                                        }}
+                                    />
                                 </Box>
-                                <CWBlockIcons
-                                    className="cw-block-icons"
-                                    sx={{
-                                        ...hoverIconsSx,
-                                        opacity: focusedBlockId === blockId ? 1 : 0,
-                                        pointerEvents: focusedBlockId === blockId ? "auto" : "none",
-                                    }}
-                                    onSave={() => {onSaveBlock(blockId)}}
-                                    onLock={() => onLockBlock(blockId)}
-                                    onStar={() => onStarBlock(blockId)}
-                                    saveButtonRef={node => {
-                                        if (node) {
-                                            saveButtonRefs.current[blockId] = node;
-                                        } else {
-                                            delete saveButtonRefs.current[blockId];
-                                        }
-                                    }}
-                                />
                             </Box>
                         )
                     }

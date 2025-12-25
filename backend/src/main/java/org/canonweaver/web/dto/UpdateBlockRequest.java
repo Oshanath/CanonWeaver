@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull;
 public record UpdateBlockRequest(
         @NotNull(message = "id is required")
         Long id,
-        @NotBlank(message = "content is required")
         String content,
         @NotNull(message = "isLocked is required")
         Boolean isLocked

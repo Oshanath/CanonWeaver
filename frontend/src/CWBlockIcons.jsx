@@ -2,9 +2,10 @@ import {Box, IconButton} from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import LockIcon from "@mui/icons-material/Lock";
 import StarIcon from "@mui/icons-material/Star";
+import DeleteIcon from "@mui/icons-material/Delete";
 import React from "react";
 
-function CWBlockIcons({sx, className, onSave, onLock, onStar, saveButtonRef}) {
+function CWBlockIcons({sx, className, onSave, onLock, onStar, onDelete, saveButtonRef}) {
     return (
         <Box className={className} sx={sx}>
             <IconButton size="small" onClick={onSave} ref={saveButtonRef}>
@@ -15,6 +16,9 @@ function CWBlockIcons({sx, className, onSave, onLock, onStar, saveButtonRef}) {
             </IconButton>
             <IconButton size="small" onClick={onStar}>
                 <StarIcon fontSize="small" />
+            </IconButton>
+            <IconButton size="small" onClick={onDelete}>
+                <DeleteIcon fontSize="small" />
             </IconButton>
         </Box>
     );
