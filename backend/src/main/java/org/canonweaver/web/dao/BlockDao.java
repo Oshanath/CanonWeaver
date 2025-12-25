@@ -6,10 +6,7 @@ import org.canonweaver.web.dto.UpdateBlockRequest;
 import org.canonweaver.web.dto.BlockResponse;
 import org.springframework.stereotype.Component;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Component
 public class BlockDao {
@@ -32,17 +29,6 @@ public class BlockDao {
 
     public List<BlockResponse> toResponses(List<Block> blocks) {
         return blocks.stream().map(this::toResponse).toList();
-    }
-
-    public Map<Long, BlockResponse> toResponseMap(List<Block> blocks) {
-        return blocks.stream()
-                .map(this::toResponse)
-                .collect(Collectors.toMap(
-                        BlockResponse::id,
-                        response -> response,
-                        (existing, replacement) -> replacement,
-                        LinkedHashMap::new
-                ));
     }
 
 }

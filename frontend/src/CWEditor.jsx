@@ -53,7 +53,7 @@ const getBlocks = async () => {
 }
 
     const blocksQueryKey = ["blocks"];
-    const {data, isPending, isError} = useQuery({
+    const {data, isPending, isError, error} = useQuery({
         queryKey: blocksQueryKey,
         queryFn: getBlocks,
     })
@@ -61,6 +61,7 @@ const getBlocks = async () => {
         if (!isPending && isError) {
             setErrorAlertMessage("Failed to load blocks");
             setErrorAlertOpen(true);
+            throw error;
         }
     }, [isError, isPending])
 
@@ -70,28 +71,28 @@ const getBlocks = async () => {
             queryClient.invalidateQueries({queryKey: blocksQueryKey});
         },
         onError: (error) => {
-            setErrorAlertMessage(error?.message || "Failed to add block");
+            setErrorAlertMessage("Failed to add block");
             setErrorAlertOpen(true);
+            throw error;
         },
     })
 
-    const updateBlock = async (blockId) => {
-        console.log("in update block:", blockId, data);
-        const response = await fetch(`/api/blocks/${blockId}`, {
+    const updateBlock = async (block) => {
+        const response = await fetch(`/api/blocks/${block.id}`, {
             method: "PUT",
             headers: {
                 "content-type": "application/json"
             },
             body: JSON.stringify({
-                id: blockId,
-                content: draftBlocks[blockId] ?? data[blockId].content ?? "",
+                id: block.id,
+                content: draftBlocks[block.id] ?? block.content ?? "",
                 isLocked: false
             }),
         });
 
         if (!response.ok) {
             let error = new Error("Failed to update block");
-            error.blockId = blockId;
+            error.blockId = block.id;
             throw error;    
         }
 
@@ -99,13 +100,17 @@ const getBlocks = async () => {
     }
     const updateBlockMutation = useMutation({
         mutationFn: updateBlock,
-        onSuccess: (data) => {
+        onSuccess: (block) => {
             queryClient.invalidateQueries({queryKey: blocksQueryKey});
+
+            let newChangedBlocks = {...changedBlocks};
+            newChangedBlocks[block.id] = false;
+            setChangedBlocks(newChangedBlocks);
         },
         onError: (error) => {
-            changedBlocks[error.blockId] = true;
-            setErrorAlertMessage(error?.message || "Failed to save block");
+            setErrorAlertMessage("Failed to save block");
             setErrorAlertOpen(true);
+            throw error;
         }
     })
 
@@ -136,14 +141,6 @@ const getBlocks = async () => {
         let newChangedBlocks = {...changedBlocks};
         newChangedBlocks[blockId] = true;
         setChangedBlocks(newChangedBlocks);
-    }
-
-    function onSaveBlock(blockId) {
-        let newChangedBlocks = {...changedBlocks};
-        newChangedBlocks[blockId] = false;
-        setChangedBlocks(newChangedBlocks);
-
-        updateBlockMutation.mutate(blockId);
     }
 
     function onLockBlock(blockId) {
@@ -193,7 +190,9 @@ const getBlocks = async () => {
     return (
         <Box sx={{ height: "100%", overflowY: "auto", overflowX: "visible", p: 2, pl:0.4, boxSizing: "border-box" }}>
             {isPending ? <CircularProgress /> :
-                data && Object.keys(data).map(blockId => {
+                data && data.map(block => {
+
+                    const blockId = block.id;
 
                     const saveIndicator = (
                         <SaveIndicator isVisible={Boolean(changedBlocks[blockId])} />
@@ -201,7 +200,7 @@ const getBlocks = async () => {
 
                     const isBlockFocused = focusedBlockId === blockId;
 
-                    if (data[blockId].isLocked){
+                    if (block.isLocked){
                         return (
                             <Box
                                 key={blockId}
@@ -221,7 +220,7 @@ const getBlocks = async () => {
                                         }}
                                     >
                                         <Typography variant="body1" component="div">
-                                            {data[blockId].content}
+                                            {block.content}
                                         </Typography>
                                     </Card>
                                     <CWBlockIcons
@@ -230,7 +229,7 @@ const getBlocks = async () => {
                                             ...iconRowBaseSx,
                                             ...(isBlockFocused ? iconRowVisibleSx : iconRowHiddenSx),
                                         }}
-                                        onSave={() => onSaveBlock(blockId)}
+                                        onSave={() => updateBlockMutation.mutate(block)}
                                         onLock={() => onLockBlock(blockId)}
                                         onStar={() => onStarBlock(blockId)}
                                         onDelete={() => onDeleteBlock(blockId)}
@@ -246,7 +245,7 @@ const getBlocks = async () => {
                             </Box>
                         )
                     } else {
-                        const value = draftBlocks[blockId] ?? data[blockId].content ?? "";
+                        const value = draftBlocks[blockId] ?? block.content ?? "";
                         return (
                             <Box
                                 key={blockId}
@@ -279,7 +278,7 @@ const getBlocks = async () => {
                                             ...iconRowBaseSx,
                                             ...(isBlockFocused ? iconRowVisibleSx : iconRowHiddenSx),
                                         }}
-                                        onSave={() => {onSaveBlock(blockId)}}
+                                        onSave={() => updateBlockMutation.mutate(block)}
                                         onLock={() => onLockBlock(blockId)}
                                         onStar={() => onStarBlock(blockId)}
                                         onDelete={() => onDeleteBlock(blockId)}
