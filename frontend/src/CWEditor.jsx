@@ -2,6 +2,7 @@ import {Box, Button, Card, CircularProgress, TextField, Typography} from "@mui/m
 import React from "react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import CWBlockIcons from "./CWBlockIcons.jsx";
+import SaveIcon from "@mui/icons-material/Save";
 
 function CWEditor(props) {
 
@@ -35,8 +36,6 @@ function CWEditor(props) {
                 const saveButton = saveButtonRefs.current[focusedBlockId];
                 if (saveButton) {
                     saveButton.click();
-                } else {
-                    onSaveBlock(focusedBlockId, changedBlocks);
                 }
             }
         }
@@ -46,7 +45,7 @@ function CWEditor(props) {
     }, [focusedBlockId, changedBlocks]);
 
     return (
-        <Box sx={{ height: "100%", overflowY: "auto", overflowX: "visible", p: 2, pr: 2, boxSizing: "border-box" }}>
+        <Box sx={{ height: "100%", overflowY: "auto", overflowX: "visible", p: 2, pl:0.4, boxSizing: "border-box" }}>
             {isPending ? <CircularProgress /> :
                 data.map(block => {
                     const hoverIconsSx = {
@@ -74,17 +73,22 @@ function CWEditor(props) {
                                 onFocus={() => setFocusedBlockId(block.id)}
                                 onClick={() => setFocusedBlockId(block.id)}
                             >
-                                <Card
-                                    sx={{
-                                        width: "100%",
-                                        p: 2,
-                                        background: "rgba(0,0,255,0.04)",
-                                    }}
-                                >
-                                    <Typography variant="body1" component="div">
-                                        {block.content}
-                                    </Typography>
-                                </Card>
+                                <Box sx={{ position: "relative", flex: 1, pl: 3.5 }}>
+                                    <Box sx={{ position: "absolute", top: 12, left: 0, pointerEvents: "none", opacity: 0 }}>
+                                        <SaveIcon fontSize="small" sx={{ color: "error.main" }} />
+                                    </Box>
+                                    <Card
+                                        sx={{
+                                            width: "100%",
+                                            p: 2,
+                                            background: "rgba(0,0,255,0.04)",
+                                        }}
+                                    >
+                                        <Typography variant="body1" component="div">
+                                            {block.content}
+                                        </Typography>
+                                    </Card>
+                                </Box>
                                 <CWBlockIcons
                                     className="cw-block-icons"
                                     sx={hoverIconsSx}
@@ -113,15 +117,21 @@ function CWEditor(props) {
                                     mb: 2,
                                 }}
                             >
-                                <TextField
-                                    value={value}
-                                    multiline
-                                    fullWidth
-                                    minRows={3}
-                                    sx={{ flex: 1 }}
-                                    onChange={e => {onBlockChange(block.id, e.target.value)}}
-                                    onFocus={() => setFocusedBlockId(block.id)}
-                                />
+                                <Box sx={{ position: "relative", flex: 1, pl: 3.5 }}>
+                                    {changedBlocks[block.id] ? (
+                                        <Box sx={{ position: "absolute", top: 12, left: 0, pointerEvents: "none" }}>
+                                            <SaveIcon fontSize="small" sx={{ color: "error.main" }} />
+                                        </Box>
+                                    ) : null}
+                                    <TextField
+                                        value={value}
+                                        multiline
+                                        fullWidth
+                                        minRows={3}
+                                        onChange={e => {onBlockChange(block.id, e.target.value)}}
+                                        onFocus={() => setFocusedBlockId(block.id)}
+                                    />
+                                </Box>
                                 <CWBlockIcons
                                     className="cw-block-icons"
                                     sx={{
