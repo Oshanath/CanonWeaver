@@ -46,42 +46,45 @@ function CWEditor(props) {
     }, [focusedBlockId, changedBlocks]);
 
     return (
-        <Box sx={{ height: "100%", overflowY: "auto", p: 2, boxSizing: "border-box" }}>
+        <Box sx={{ height: "100%", overflowY: "auto", overflowX: "visible", p: 2, pr: 2, boxSizing: "border-box" }}>
             {isPending ? <CircularProgress /> :
                 data.map(block => {
                     const hoverIconsSx = {
-                        position: "absolute",
-                        top: "50%",
-                        right: 8,
-                        transform: "translateY(-50%)",
                         display: "flex",
-                        flexDirection: "column",
+                        flexDirection: "row",
                         gap: 1,
                         opacity: 0,
                         transition: "opacity 0.15s ease",
                         pointerEvents: "none",
+                        alignSelf: "center",
                     };
 
                     if (block.isSaved){
                         return (
-                            <Card
+                            <Box
                                 key={block.id}
                                 sx={{
-                                    width: "100%",
-                                    p: 2,
-                                    pr: 6,
+                                    display: "flex",
+                                    alignItems: "stretch",
+                                    gap: 1,
                                     mb: 2,
-                                    background: "rgba(0,0,255,0.04)",
-                                    position: "relative",
                                     "&:hover .cw-block-icons": { opacity: 1, pointerEvents: "auto" },
                                 }}
                                 tabIndex={0}
                                 onFocus={() => setFocusedBlockId(block.id)}
                                 onClick={() => setFocusedBlockId(block.id)}
                             >
-                                <Typography variant="body1" component="div">
-                                    {block.content}
-                                </Typography>
+                                <Card
+                                    sx={{
+                                        width: "100%",
+                                        p: 2,
+                                        background: "rgba(0,0,255,0.04)",
+                                    }}
+                                >
+                                    <Typography variant="body1" component="div">
+                                        {block.content}
+                                    </Typography>
+                                </Card>
                                 <CWBlockIcons
                                     className="cw-block-icons"
                                     sx={hoverIconsSx}
@@ -96,7 +99,7 @@ function CWEditor(props) {
                                         }
                                     }}
                                 />
-                            </Card>
+                            </Box>
                         )
                     } else {
                         const value = draftBlocks[block.id] ?? block.content ?? "";
@@ -104,7 +107,9 @@ function CWEditor(props) {
                             <Box
                                 key={block.id}
                                 sx={{
-                                    position: "relative",
+                                    display: "flex",
+                                    alignItems: "stretch",
+                                    gap: 1,
                                     mb: 2,
                                 }}
                             >
@@ -113,7 +118,7 @@ function CWEditor(props) {
                                     multiline
                                     fullWidth
                                     minRows={3}
-                                    sx={{ pr: 6 }}
+                                    sx={{ flex: 1 }}
                                     onChange={e => {onBlockChange(block.id, e.target.value)}}
                                     onFocus={() => setFocusedBlockId(block.id)}
                                 />
