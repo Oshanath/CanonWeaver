@@ -8,7 +8,7 @@ public record UpdateBlockRequest(
         Long id,
         @NotBlank(message = "content is required")
         String content,
-        @NotNull(message = "isSaved is required")
-        Boolean isSaved
+        @NotNull(message = "isLocked is required")
+        Boolean isLocked
 ) {
 }

@@ -15,16 +15,16 @@ public class BlockDao {
         if (request == null) {
             return new Block(null, null, false);
         }
-        boolean isSaved = request.isSaved() != null && request.isSaved();
-        return new Block(request.id(), request.content(), isSaved);
+        boolean isLocked = request.isLocked() != null && request.isLocked();
+        return new Block(request.id(), request.content(), isLocked);
     }
 
     public Block toEntity(UpdateBlockRequest request) {
-        return new Block(request.id(), request.content(), request.isSaved());
+        return new Block(request.id(), request.content(), request.isLocked());
     }
 
     public BlockResponse toResponse(Block block) {
-        return new BlockResponse(block.getId(), block.getContent(), block.isSaved());
+        return new BlockResponse(block.getId(), block.getContent(), block.isLocked());
     }
 
     public List<BlockResponse> toResponses(List<Block> blocks) {

@@ -58,7 +58,7 @@ function CWEditor(props) {
                         alignSelf: "center",
                     };
 
-                    if (block.isSaved){
+                    if (block.isLocked){
                         return (
                             <Box
                                 key={block.id}
@@ -74,6 +74,7 @@ function CWEditor(props) {
                                 onClick={() => setFocusedBlockId(block.id)}
                             >
                                 <Box sx={{ position: "relative", flex: 1, pl: 3.5 }}>
+                                    {/*This Box is invisible. Only added to maintain a common margin.*/}
                                     <Box sx={{ position: "absolute", top: 12, left: 0, pointerEvents: "none", opacity: 0 }}>
                                         <SaveIcon fontSize="small" sx={{ color: "error.main" }} />
                                     </Box>
@@ -202,7 +203,7 @@ const updateBlock = async (blockId, content, isSaved) => {
         body: JSON.stringify({
             id: blockId,
             content: content ?? "",
-            isSaved: false
+            isLocked: false
         }),
     });
     return await response.json();

@@ -4,16 +4,16 @@ public class Block {
 
     private Long id;
     private String content;
-    private boolean isSaved;
+    private boolean isLocked;
 
     public Block() {
 
     }
 
-    public Block(Long id, String content, boolean isSaved) {
+    public Block(Long id, String content, boolean isLocked) {
         this.id = id;
         this.content = content;
-        this.isSaved = isSaved;
+        this.isLocked = isLocked;
     }
 
     public Long getId() {
@@ -32,11 +32,11 @@ public class Block {
         this.content = content;
     }
 
-    public boolean isSaved() {
-        return isSaved;
+    public boolean isLocked() {
+        return isLocked;
     }
 
-    public void setSaved(boolean saved) {
-        isSaved = saved;
+    public void setLocked(boolean locked) {
+        isLocked = locked;
     }
 }

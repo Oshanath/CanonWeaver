@@ -20,7 +20,7 @@ public class BlockRepository {
     private final RowMapper<Block> rowMapper = ((rs, rowNum) -> new Block(
             rs.getLong("id"),
             rs.getString("content"),
-            rs.getBoolean("is_saved")
+            rs.getBoolean("is_locked")
     ));
 
     public BlockRepository(JdbcTemplate jdbcTemplate) {
@@ -42,10 +42,10 @@ public class BlockRepository {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(con -> {
             PreparedStatement ps = con.prepareStatement("""
-                    INSERT INTO blocks (content, is_saved) VALUES (?, ?)
+                    INSERT INTO blocks (content, is_locked) VALUES (?, ?)
                     """, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, block.getContent());
-            ps.setBoolean(2, block.isSaved());
+            ps.setBoolean(2, block.isLocked());
             return ps;
         }, keyHolder);
         Number key = keyHolder.getKey();
@@ -59,17 +59,17 @@ public class BlockRepository {
         jdbcTemplate.update("""
                 UPDATE blocks
                 SET content = ?,
-                    is_saved = ?
+                    is_locked = ?
                 WHERE id = ?
                 """,
                 block.getContent(),
-                block.isSaved(),
+                block.isLocked(),
                 block.getId());
     }
 
     public List<Block> findAll() {
         return jdbcTemplate.query("""
-                SELECT id, content, is_saved
+                SELECT id, content, is_locked
                 FROM blocks
                 """, rowMapper);
     }
