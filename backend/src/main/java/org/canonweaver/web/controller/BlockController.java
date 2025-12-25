@@ -44,4 +44,10 @@ public class BlockController {
         return ResponseEntity.ok(blockDao.toResponse(updated));
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        blockService.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
 }

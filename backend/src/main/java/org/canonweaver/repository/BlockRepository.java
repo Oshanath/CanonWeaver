@@ -74,4 +74,11 @@ public class BlockRepository {
                 """, rowMapper);
     }
 
+    public void deleteById(Long id) {
+        jdbcTemplate.update("""
+                DELETE FROM blocks
+                WHERE id = ?
+                """, id);
+    }
+
 }

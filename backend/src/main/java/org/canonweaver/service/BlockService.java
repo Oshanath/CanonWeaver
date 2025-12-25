@@ -27,4 +27,8 @@ public class BlockService {
         return blockRepository.findAll();
     }
 
+    public void deleteById(Long id) {
+        blockRepository.deleteById(id);
+    }
+
 }

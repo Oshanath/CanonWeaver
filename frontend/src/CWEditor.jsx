@@ -1,4 +1,18 @@
-import {Alert, Box, Button, Card, CircularProgress, Snackbar, TextField, Typography} from "@mui/material";
+import {
+    Alert,
+    Box,
+    Button,
+    Card,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    Snackbar,
+    TextField,
+    Typography
+} from "@mui/material";
 import React from "react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import CWBlockIcons from "./CWBlockIcons.jsx";
@@ -31,6 +45,8 @@ function CWEditor(props) {
     const [errorAlertOpen, setErrorAlertOpen] = React.useState(false);
     const [errorAlertMessage, setErrorAlertMessage] = React.useState("");
     const [focusedBlockId, setFocusedBlockId] = React.useState(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+    const [pendingDeleteBlockId, setPendingDeleteBlockId] = React.useState(null);
     const saveButtonRefs = React.useRef({});
 
 const addBlock = async () => {
@@ -114,6 +130,42 @@ const getBlocks = async () => {
         }
     })
 
+    const deleteBlock = async (blockId) => {
+        const response = await fetch(`/api/blocks/${blockId}`, {
+            method: "DELETE",
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to delete block");
+        }
+
+        return blockId;
+    }
+
+    const deleteBlockMutation = useMutation({
+        mutationFn: deleteBlock,
+        onSuccess: (deletedBlockId) => {
+            queryClient.invalidateQueries({queryKey: blocksQueryKey});
+
+            const newDraftBlocks = {...draftBlocks};
+            delete newDraftBlocks[deletedBlockId];
+            setDraftBlocks(newDraftBlocks);
+
+            const newChangedBlocks = {...changedBlocks};
+            delete newChangedBlocks[deletedBlockId];
+            setChangedBlocks(newChangedBlocks);
+
+            if (focusedBlockId === deletedBlockId) {
+                setFocusedBlockId(null);
+            }
+        },
+        onError: (error) => {
+            setErrorAlertMessage("Failed to delete block");
+            setErrorAlertOpen(true);
+            throw error;
+        }
+    })
+
     React.useEffect(() => {
         function handleKeyDown(event) {
             if (!focusedBlockId) {
@@ -152,7 +204,23 @@ const getBlocks = async () => {
     }
 
     function onDeleteBlock(blockId) {
-        console.log("delete block", blockId);
+        setPendingDeleteBlockId(blockId);
+        setDeleteDialogOpen(true);
+    }
+
+    function onConfirmDelete() {
+        if (pendingDeleteBlockId == null) {
+            setDeleteDialogOpen(false);
+            return;
+        }
+        deleteBlockMutation.mutate(pendingDeleteBlockId);
+        setDeleteDialogOpen(false);
+        setPendingDeleteBlockId(null);
+    }
+
+    function onCancelDelete() {
+        setDeleteDialogOpen(false);
+        setPendingDeleteBlockId(null);
     }
 
     const iconRowBaseSx = {
@@ -318,6 +386,27 @@ const getBlocks = async () => {
                     {errorAlertMessage || "Failed to save block"}
                 </Alert>
             </Snackbar>
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={onCancelDelete}
+                aria-labelledby="delete-block-dialog-title"
+                aria-describedby="delete-block-dialog-description"
+            >
+                <DialogTitle id="delete-block-dialog-title">
+                    Delete block?
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="delete-block-dialog-description">
+                        Are you sure you want to delete this block? This action will not be reversible.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onCancelDelete}>Cancel</Button>
+                    <Button color="error" onClick={onConfirmDelete}>
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     )
 }
