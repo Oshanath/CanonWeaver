@@ -15,15 +15,29 @@ const orderPrefixStyle = {
 };
 
 const ChapterTreeItemLabel = React.forwardRef(function ChapterTreeItemLabel(props, ref) {
-    const { sortOrder, children, ...other } = props;
+    const { sortOrder, children, showSceneButton, onAddScene, ...other } = props;
+
+    const handleAddSceneClick = (event) => {
+        event.stopPropagation();
+        onAddScene?.();
+    };
+
     return (
         <TreeItemLabel ref={ref} {...other}>
-            <span
-                style={orderPrefixStyle}
-            >
-                {sortOrder ?? ""}
+            <span style={{ display: "flex", alignItems: "center", width: "100%" }}>
+                <span style={orderPrefixStyle}>{sortOrder ?? ""}</span>
+                <span style={{ minWidth: 0, flex: 1 }}>{children}</span>
+                {showSceneButton ? (
+                    <Button
+                        size="small"
+                        variant="text"
+                        sx={{ textTransform: "none", ml: 1 }}
+                        onClick={handleAddSceneClick}
+                    >
+                        + Scene
+                    </Button>
+                ) : null}
             </span>
-            {children}
         </TreeItemLabel>
     );
 });
@@ -49,13 +63,23 @@ function ChapterTreeItem(props) {
         slotProps: externalSlotProps = {},
         slots: externalSlots = {},
         onLabelInputFocus,
+        selectedItemId,
+        onAddScene,
         ...other
     } = props;
     const item = useTreeItemModel(itemId);
     const sortOrder = item?.sortOrder;
+    const isChapter = item?.type === "chapter";
+    const showSceneButton = isChapter && selectedItemId === itemId;
     const handleLabelInputFocus = (event) => {
         externalSlotProps.labelInput?.onFocus?.(event);
         onLabelInputFocus?.(event);
+    };
+    const handleAddScene = () => {
+        if (!item?.chapterId) {
+            return;
+        }
+        onAddScene?.(item.chapterId);
     };
 
     return (
@@ -66,7 +90,12 @@ function ChapterTreeItem(props) {
             slots={{ ...externalSlots, label: ChapterTreeItemLabel, labelInput: ChapterTreeItemLabelInput }}
             slotProps={{
                 ...externalSlotProps,
-                label: { ...externalSlotProps.label, sortOrder },
+                label: {
+                    ...externalSlotProps.label,
+                    sortOrder,
+                    showSceneButton,
+                    onAddScene: handleAddScene,
+                },
                 labelInput: { ...externalSlotProps.labelInput, sortOrder, onFocus: handleLabelInputFocus },
             }}
         />
@@ -78,6 +107,7 @@ function CWManuscriptExplorer() {
     const queryClient = useQueryClient();
     const apiRef = useRichTreeViewApiRef();
     const [pendingEditId, setPendingEditId] = React.useState(null);
+    const [selectedItemId, setSelectedItemId] = React.useState(null);
 
     const chaptersQueryKey = ["chapters"];
     const getChapters = async () => {
@@ -92,18 +122,59 @@ function CWManuscriptExplorer() {
         queryFn: getChapters,
     });
 
+    const scenesQueryKey = ["scenes"];
+    const getScenes = async () => {
+        const response = await fetch("/api/scenes");
+        if (!response.ok) {
+            throw new Error(`Failed to load scenes: ${response.status}`);
+        }
+        return await response.json();
+    };
+    const { data: scenes = [] } = useQuery({
+        queryKey: scenesQueryKey,
+        queryFn: getScenes,
+    });
+
+    const scenesByChapter = React.useMemo(() => {
+        const map = new Map();
+        scenes.forEach((scene) => {
+            const entry = map.get(scene.chapterId);
+            if (entry) {
+                entry.push(scene);
+            } else {
+                map.set(scene.chapterId, [scene]);
+            }
+        });
+        return map;
+    }, [scenes]);
+
+    const chapterItemId = (id) => `chapter-${id}`;
+    const sceneItemId = (id) => `scene-${id}`;
+
     const items = chapters.map((chapter) => ({
-        id: String(chapter.id),
+        id: chapterItemId(chapter.id),
         label: chapter.name,
         sortOrder: chapter.sortOrder,
+        type: "chapter",
+        chapterId: chapter.id,
+        children: (scenesByChapter.get(chapter.id) ?? []).map((scene) => ({
+            id: sceneItemId(scene.id),
+            label: scene.name,
+            sortOrder: scene.sortOrder,
+            type: "scene",
+            chapterId: scene.chapterId,
+        })),
     }));
 
-    function parseChapterId(itemId) {
+    function parseItemId(itemId) {
         if (typeof itemId !== "string") {
-            return null;
+            return { type: null, id: null };
         }
-        const numeric = Number(itemId);
-        return Number.isFinite(numeric) ? numeric : null;
+        const match = itemId.match(/^(chapter|scene)-(\d+)$/);
+        if (!match) {
+            return { type: null, id: null };
+        }
+        return { type: match[1], id: Number(match[2]) };
     }
 
     const createChapter = async (chapter) => {
@@ -122,7 +193,7 @@ function CWManuscriptExplorer() {
         onSuccess: (createdChapter) => {
             queryClient.invalidateQueries({ queryKey: chaptersQueryKey });
             if (createdChapter?.id != null) {
-                setPendingEditId(String(createdChapter.id));
+                setPendingEditId(chapterItemId(createdChapter.id));
             }
         },
         onError: (error) => {
@@ -151,23 +222,86 @@ function CWManuscriptExplorer() {
         },
     });
 
-    function handleRenameChapter(itemId, newLabel) {
-        const chapterId = parseChapterId(itemId);
-        if (chapterId == null) {
+    const createScene = async (scene) => {
+        const response = await fetch("/api/scenes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(scene),
+        });
+        if (!response.ok) {
+            throw new Error(`Failed to create scene: ${response.status}`);
+        }
+        return await response.json();
+    };
+    const createSceneMutation = useMutation({
+        mutationFn: createScene,
+        onSuccess: (createdScene) => {
+            queryClient.invalidateQueries({ queryKey: scenesQueryKey });
+            if (createdScene?.id != null) {
+                setPendingEditId(sceneItemId(createdScene.id));
+            }
+        },
+        onError: (error) => {
+            console.error(error);
+        },
+    });
+
+    const renameScene = async ({ id, name }) => {
+        const response = await fetch(`/api/scenes/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name }),
+        });
+        if (!response.ok) {
+            throw new Error(`Failed to rename scene: ${response.status}`);
+        }
+        return await response.json();
+    };
+    const renameSceneMutation = useMutation({
+        mutationFn: renameScene,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: scenesQueryKey });
+        },
+        onError: (error) => {
+            console.error(error);
+        },
+    });
+
+    function handleRenameItem(itemId, newLabel) {
+        const { type, id } = parseItemId(itemId);
+        if (!type || id == null) {
             return;
         }
         const trimmedLabel = newLabel.trim();
-        const currentChapter = chapters.find((chapter) => chapter.id === chapterId);
-        if (!currentChapter || trimmedLabel === "" || trimmedLabel === currentChapter.name) {
+        if (trimmedLabel === "") {
             return;
         }
-        renameChapterMutation.mutate({ id: chapterId, name: trimmedLabel });
+        if (type === "chapter") {
+            const currentChapter = chapters.find((chapter) => chapter.id === id);
+            if (!currentChapter || trimmedLabel === currentChapter.name) {
+                return;
+            }
+            renameChapterMutation.mutate({ id, name: trimmedLabel });
+        } else if (type === "scene") {
+            const currentScene = scenes.find((scene) => scene.id === id);
+            if (!currentScene || trimmedLabel === currentScene.name) {
+                return;
+            }
+            renameSceneMutation.mutate({ id, name: trimmedLabel });
+        }
     }
 
     function handleCreateChapter() {
         const nextIndex = chapters.length + 1;
         const newChapter = { name: `chapter-${nextIndex}` };
         createChapterMutation.mutate(newChapter);
+    }
+
+    function handleCreateScene(chapterId) {
+        const scenesForChapter = scenesByChapter.get(chapterId) ?? [];
+        const nextIndex = scenesForChapter.length + 1;
+        const newScene = { name: `scene-${nextIndex}`, chapterId };
+        createSceneMutation.mutate(newScene);
     }
 
     function handleLabelInputFocus(event) {
@@ -180,13 +314,15 @@ function CWManuscriptExplorer() {
         if (!pendingEditId) {
             return;
         }
-        const exists = chapters.some((chapter) => String(chapter.id) === pendingEditId);
+        const existsInChapters = chapters.some((chapter) => chapterItemId(chapter.id) === pendingEditId);
+        const existsInScenes = scenes.some((scene) => sceneItemId(scene.id) === pendingEditId);
+        const exists = existsInChapters || existsInScenes;
         if (!exists || !apiRef.current) {
             return;
         }
         apiRef.current.setEditedItem(pendingEditId);
         setPendingEditId(null);
-    }, [apiRef, chapters, pendingEditId]);
+    }, [apiRef, chapters, pendingEditId, scenes]);
 
     return (
         <Box sx={{ minHeight: 352, minWidth: 250 }}>
@@ -205,9 +341,20 @@ function CWManuscriptExplorer() {
                     apiRef={apiRef}
                     items={items}
                     isItemEditable={() => true}
-                    onItemLabelChange={handleRenameChapter}
+                    onItemLabelChange={handleRenameItem}
+                    selectedItems={selectedItemId}
+                    onSelectedItemsChange={(event, itemId) => {
+                        const nextSelected = Array.isArray(itemId) ? itemId[0] ?? null : itemId;
+                        setSelectedItemId(nextSelected ?? null);
+                    }}
                     slots={{ item: ChapterTreeItem }}
-                    slotProps={{ item: { onLabelInputFocus: handleLabelInputFocus } }}
+                    slotProps={{
+                        item: {
+                            onLabelInputFocus: handleLabelInputFocus,
+                            selectedItemId,
+                            onAddScene: handleCreateScene,
+                        },
+                    }}
                     sx={{
                         "& .MuiTreeItem-content": {
                             minWidth: 0,

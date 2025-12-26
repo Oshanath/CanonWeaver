@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS scenes (
     name VARCHAR(50) NOT NULL,
     sort_order INT NOT NULL,
     chapter_id BIGINT NOT NULL,
-    FOREIGN KEY (chapter_id) REFERENCES chapters(id)
+    FOREIGN KEY (chapter_id) REFERENCES chapters(id),
+    UNIQUE KEY uq_scenes_chapter_sort_order (chapter_id, sort_order)
 );
 
 CREATE TABLE IF NOT EXISTS blocks (
