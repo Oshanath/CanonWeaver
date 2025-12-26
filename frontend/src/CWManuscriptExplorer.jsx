@@ -23,19 +23,13 @@ function CWManuscriptExplorer() {
         queryFn: getChapters,
     });
 
-    const items = [
-        {
-            id: "chapters-root",
-            label: "Chapters",
-            children: chapters.map((chapter) => ({
-                id: String(chapter.id),
-                label: chapter.name,
-            })),
-        },
-    ];
+    const items = chapters.map((chapter) => ({
+        id: String(chapter.id),
+        label: chapter.name,
+    }));
 
     function parseChapterId(itemId) {
-        if (typeof itemId !== "string" || itemId === "chapters-root") {
+        if (typeof itemId !== "string") {
             return null;
         }
         const numeric = Number(itemId);
@@ -136,7 +130,7 @@ function CWManuscriptExplorer() {
             <Box sx={{ px: 1, pb: 1 }}>
                 <RichTreeView
                     items={items}
-                    isItemEditable={(item) => item.id !== "chapters-root"}
+                    isItemEditable={() => true}
                     onItemLabelChange={handleRenameChapter}
                     sx={{
                         "& .MuiTreeItem-content": {
