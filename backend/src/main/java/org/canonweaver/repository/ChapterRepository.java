@@ -34,6 +34,15 @@ public class ChapterRepository {
                 """, rowMapper);
     }
 
+    public Chapter findById(Long id) {
+        List<Chapter> results = jdbcTemplate.query("""
+                SELECT id, name, sort_order
+                FROM chapters
+                WHERE id = ?
+                """, rowMapper, id);
+        return results.stream().findFirst().orElse(null);
+    }
+
     public Integer findMaxSortOrder() {
         return jdbcTemplate.queryForObject("""
                 SELECT MAX(sort_order)

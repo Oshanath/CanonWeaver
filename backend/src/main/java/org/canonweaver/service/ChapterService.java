@@ -3,7 +3,9 @@ package org.canonweaver.service;
 import org.canonweaver.domain.Chapter;
 import org.canonweaver.repository.ChapterRepository;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -35,5 +37,14 @@ public class ChapterService {
                 }
             }
         }
+    }
+
+    public Chapter updateName(Long id, String name) {
+        Chapter existing = chapterRepository.findById(id);
+        if (existing == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Chapter not found");
+        }
+        existing.setName(name);
+        return chapterRepository.save(existing);
     }
 }
