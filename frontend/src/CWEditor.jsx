@@ -47,6 +47,8 @@ function CWEditor(props) {
     const [focusedBlockId, setFocusedBlockId] = React.useState(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
     const [pendingDeleteBlockId, setPendingDeleteBlockId] = React.useState(null);
+    const [unlockDialogOpen, setUnlockDialogOpen] = React.useState(false);
+    const [pendingUnlockBlock, setPendingUnlockBlock] = React.useState(null);
     const saveButtonRefs = React.useRef({});
 
 const addBlock = async () => {
@@ -166,6 +168,44 @@ const getBlocks = async () => {
         }
     })
 
+    const setBlockLockState = async ({block, isLocked}) => {
+        const response = await fetch(`/api/blocks/${block.id}`, {
+            method: "PUT",
+            headers: {
+                "content-type": "application/json"
+            },
+            body: JSON.stringify({
+                id: block.id,
+                content: draftBlocks[block.id] ?? block.content ?? "",
+                isLocked
+            }),
+        });
+
+        if (!response.ok) {
+            let error = new Error("Failed to update block lock");
+            error.blockId = block.id;
+            throw error;
+        }
+
+        return await response.json();
+    }
+
+    const lockBlockMutation = useMutation({
+        mutationFn: setBlockLockState,
+        onSuccess: (block) => {
+            queryClient.invalidateQueries({queryKey: blocksQueryKey});
+
+            let newChangedBlocks = {...changedBlocks};
+            newChangedBlocks[block.id] = false;
+            setChangedBlocks(newChangedBlocks);
+        },
+        onError: (error) => {
+            setErrorAlertMessage("Failed to update block lock");
+            setErrorAlertOpen(true);
+            throw error;
+        }
+    })
+
     React.useEffect(() => {
         function handleKeyDown(event) {
             if (!focusedBlockId) {
@@ -195,12 +235,32 @@ const getBlocks = async () => {
         setChangedBlocks(newChangedBlocks);
     }
 
-    function onLockBlock(blockId) {
-        console.log("lock block", blockId);
-    }
-
     function onStarBlock(blockId) {
         console.log("star block", blockId);
+    }
+
+    function onLockBlock(block) {
+        if (block.isLocked) {
+            setPendingUnlockBlock(block);
+            setUnlockDialogOpen(true);
+            return;
+        }
+        lockBlockMutation.mutate({block, isLocked: true});
+    }
+
+    function onConfirmUnlock() {
+        if (!pendingUnlockBlock) {
+            setUnlockDialogOpen(false);
+            return;
+        }
+        lockBlockMutation.mutate({block: pendingUnlockBlock, isLocked: false});
+        setUnlockDialogOpen(false);
+        setPendingUnlockBlock(null);
+    }
+
+    function onCancelUnlock() {
+        setUnlockDialogOpen(false);
+        setPendingUnlockBlock(null);
     }
 
     function onDeleteBlock(blockId) {
@@ -298,7 +358,7 @@ const getBlocks = async () => {
                                             ...(isBlockFocused ? iconRowVisibleSx : iconRowHiddenSx),
                                         }}
                                         onSave={() => updateBlockMutation.mutate(block)}
-                                        onLock={() => onLockBlock(blockId)}
+                                        onLock={() => onLockBlock(block)}
                                         onStar={() => onStarBlock(blockId)}
                                         onDelete={() => onDeleteBlock(blockId)}
                                         saveButtonRef={node => {
@@ -347,7 +407,7 @@ const getBlocks = async () => {
                                             ...(isBlockFocused ? iconRowVisibleSx : iconRowHiddenSx),
                                         }}
                                         onSave={() => updateBlockMutation.mutate(block)}
-                                        onLock={() => onLockBlock(blockId)}
+                                        onLock={() => onLockBlock(block)}
                                         onStar={() => onStarBlock(blockId)}
                                         onDelete={() => onDeleteBlock(blockId)}
                                         saveButtonRef={node => {
@@ -404,6 +464,27 @@ const getBlocks = async () => {
                     <Button onClick={onCancelDelete}>Cancel</Button>
                     <Button color="error" onClick={onConfirmDelete}>
                         Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
+            <Dialog
+                open={unlockDialogOpen}
+                onClose={onCancelUnlock}
+                aria-labelledby="unlock-block-dialog-title"
+                aria-describedby="unlock-block-dialog-description"
+            >
+                <DialogTitle id="unlock-block-dialog-title">
+                    Unlock block?
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="unlock-block-dialog-description">
+                        Are you sure you want to make this block editable. This action will invalidate the knowledge gathered for all blocks after this one.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onCancelUnlock}>Cancel</Button>
+                    <Button color="warning" onClick={onConfirmUnlock}>
+                        Unlock
                     </Button>
                 </DialogActions>
             </Dialog>
