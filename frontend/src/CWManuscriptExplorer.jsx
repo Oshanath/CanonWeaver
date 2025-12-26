@@ -1,27 +1,44 @@
 import {Box, Button} from "@mui/material";
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
 import { TreeItem, TreeItemLabel } from "@mui/x-tree-view/TreeItem";
+import { TreeItemLabelInput } from "@mui/x-tree-view/TreeItemLabelInput";
 import { useRichTreeViewApiRef, useTreeItemModel } from "@mui/x-tree-view/hooks";
 import React from "react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+
+const orderPrefixStyle = {
+    display: "inline-block",
+    minWidth: "3ch",
+    marginRight: "1.6em",
+    textAlign: "right",
+    color: "rgba(0, 0, 0, 0.6)",
+};
 
 const ChapterTreeItemLabel = React.forwardRef(function ChapterTreeItemLabel(props, ref) {
     const { sortOrder, children, ...other } = props;
     return (
         <TreeItemLabel ref={ref} {...other}>
             <span
-                style={{
-                    display: "inline-block",
-                    minWidth: "2.2em",
-                    marginRight: "0.5em",
-                    textAlign: "right",
-                    color: "rgba(0, 0, 0, 0.6)",
-                }}
+                style={orderPrefixStyle}
             >
                 {sortOrder ?? ""}
             </span>
             {children}
         </TreeItemLabel>
+    );
+});
+
+const ChapterTreeItemLabelInput = React.forwardRef(function ChapterTreeItemLabelInput(props, ref) {
+    const { sortOrder, style, ...other } = props;
+    return (
+        <span style={{ display: "flex", alignItems: "center", width: "100%" }}>
+            <span style={orderPrefixStyle}>{sortOrder ?? ""}</span>
+            <TreeItemLabelInput
+                ref={ref}
+                {...other}
+                style={{ ...style, flex: 1, minWidth: 0 }}
+            />
+        </span>
     );
 });
 
@@ -46,11 +63,11 @@ function ChapterTreeItem(props) {
             {...other}
             itemId={itemId}
             label={label}
-            slots={{ ...externalSlots, label: ChapterTreeItemLabel }}
+            slots={{ ...externalSlots, label: ChapterTreeItemLabel, labelInput: ChapterTreeItemLabelInput }}
             slotProps={{
                 ...externalSlotProps,
                 label: { ...externalSlotProps.label, sortOrder },
-                labelInput: { ...externalSlotProps.labelInput, onFocus: handleLabelInputFocus },
+                labelInput: { ...externalSlotProps.labelInput, sortOrder, onFocus: handleLabelInputFocus },
             }}
         />
     );
@@ -183,7 +200,7 @@ function CWManuscriptExplorer() {
                     + Chapter
                 </Button>
             </Box>
-            <Box sx={{ px: 1, pb: 1 }}>
+            <Box sx={{ px: 0, pb: 1 }}>
                 <RichTreeView
                     apiRef={apiRef}
                     items={items}
