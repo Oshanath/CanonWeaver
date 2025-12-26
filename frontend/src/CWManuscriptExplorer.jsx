@@ -238,6 +238,12 @@ function CWManuscriptExplorer() {
         onSuccess: (createdScene) => {
             queryClient.invalidateQueries({ queryKey: scenesQueryKey });
             if (createdScene?.id != null) {
+                if (createdScene.chapterId != null) {
+                    apiRef.current?.setItemExpansion({
+                        itemId: chapterItemId(createdScene.chapterId),
+                        shouldBeExpanded: true,
+                    });
+                }
                 setPendingEditId(sceneItemId(createdScene.id));
             }
         },
