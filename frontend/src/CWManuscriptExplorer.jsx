@@ -1,8 +1,60 @@
 import {Box, Button} from "@mui/material";
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
-import { useRichTreeViewApiRef } from "@mui/x-tree-view/hooks";
+import { TreeItem, TreeItemLabel } from "@mui/x-tree-view/TreeItem";
+import { useRichTreeViewApiRef, useTreeItemModel } from "@mui/x-tree-view/hooks";
 import React from "react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+
+const ChapterTreeItemLabel = React.forwardRef(function ChapterTreeItemLabel(props, ref) {
+    const { sortOrder, children, ...other } = props;
+    return (
+        <TreeItemLabel ref={ref} {...other}>
+            <span
+                style={{
+                    display: "inline-block",
+                    minWidth: "2.2em",
+                    marginRight: "0.5em",
+                    textAlign: "right",
+                    color: "rgba(0, 0, 0, 0.6)",
+                }}
+            >
+                {sortOrder ?? ""}
+            </span>
+            {children}
+        </TreeItemLabel>
+    );
+});
+
+function ChapterTreeItem(props) {
+    const {
+        itemId,
+        label,
+        slotProps: externalSlotProps = {},
+        slots: externalSlots = {},
+        onLabelInputFocus,
+        ...other
+    } = props;
+    const item = useTreeItemModel(itemId);
+    const sortOrder = item?.sortOrder;
+    const handleLabelInputFocus = (event) => {
+        externalSlotProps.labelInput?.onFocus?.(event);
+        onLabelInputFocus?.(event);
+    };
+
+    return (
+        <TreeItem
+            {...other}
+            itemId={itemId}
+            label={label}
+            slots={{ ...externalSlots, label: ChapterTreeItemLabel }}
+            slotProps={{
+                ...externalSlotProps,
+                label: { ...externalSlotProps.label, sortOrder },
+                labelInput: { ...externalSlotProps.labelInput, onFocus: handleLabelInputFocus },
+            }}
+        />
+    );
+}
 
 function CWManuscriptExplorer() {
 
@@ -26,6 +78,7 @@ function CWManuscriptExplorer() {
     const items = chapters.map((chapter) => ({
         id: String(chapter.id),
         label: chapter.name,
+        sortOrder: chapter.sortOrder,
     }));
 
     function parseChapterId(itemId) {
@@ -136,15 +189,8 @@ function CWManuscriptExplorer() {
                     items={items}
                     isItemEditable={() => true}
                     onItemLabelChange={handleRenameChapter}
-                    slotProps={{
-                        item: {
-                            slotProps: {
-                                labelInput: {
-                                    onFocus: handleLabelInputFocus,
-                                },
-                            },
-                        },
-                    }}
+                    slots={{ item: ChapterTreeItem }}
+                    slotProps={{ item: { onLabelInputFocus: handleLabelInputFocus } }}
                     sx={{
                         "& .MuiTreeItem-content": {
                             minWidth: 0,
