@@ -27,6 +27,10 @@ public class BlockService {
         return blockRepository.findAll();
     }
 
+    public List<Block> findAllBySceneId(Long sceneId) {
+        return blockRepository.findAllBySceneId(sceneId);
+    }
+
     public void deleteById(Long id) {
         blockRepository.deleteById(id);
     }

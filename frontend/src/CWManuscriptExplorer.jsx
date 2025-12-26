@@ -119,7 +119,7 @@ function ChapterTreeItem(props) {
     );
 }
 
-function CWManuscriptExplorer() {
+function CWManuscriptExplorer({ onSelectionChange }) {
 
     const queryClient = useQueryClient();
     const apiRef = useRichTreeViewApiRef();
@@ -369,6 +369,23 @@ function CWManuscriptExplorer() {
                     onSelectedItemsChange={(event, itemId) => {
                         const nextSelected = Array.isArray(itemId) ? itemId[0] ?? null : itemId;
                         setSelectedItemId(nextSelected ?? null);
+                        if (!nextSelected) {
+                            onSelectionChange?.({ chapter: null, scene: null });
+                            return;
+                        }
+                        const { type, id } = parseItemId(nextSelected);
+                        if (type === "chapter") {
+                            const chapter = chapters.find((entry) => entry.id === id) ?? null;
+                            onSelectionChange?.({ chapter, scene: null });
+                            return;
+                        }
+                        if (type === "scene") {
+                            const scene = scenes.find((entry) => entry.id === id) ?? null;
+                            const chapter = scene
+                                ? chapters.find((entry) => entry.id === scene.chapterId) ?? null
+                                : null;
+                            onSelectionChange?.({ chapter, scene });
+                        }
                     }}
                     slots={{ item: ChapterTreeItem }}
                     slotProps={{

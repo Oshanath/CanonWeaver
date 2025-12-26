@@ -36,7 +36,7 @@ function SaveIndicator({isVisible}) {
     );
 }
 
-function CWEditor(props) {
+function CWEditor({ selectedChapter, selectedScene }) {
 
     const queryClient = useQueryClient();
 
@@ -51,29 +51,42 @@ function CWEditor(props) {
     const [pendingUnlockBlock, setPendingUnlockBlock] = React.useState(null);
     const saveButtonRefs = React.useRef({});
 
-const addBlock = async () => {
-    const response = await fetch("/api/blocks", {
-        method: "POST"
-    });
-    if (!response.ok) {
-        throw new Error("Failed to add block");
-    }
-    return await response.json();
-}
+    const sceneId = selectedScene?.id ?? null;
 
-const getBlocks = async () => {
-    const response = await fetch("/api/blocks")
-    if (!response.ok) {
-        throw new Error("Failed to load blocks");
+    const addBlock = async () => {
+        if (sceneId == null) {
+            throw new Error("No scene selected");
+        }
+        const response = await fetch("/api/blocks", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({ sceneId }),
+        });
+        if (!response.ok) {
+            throw new Error("Failed to add block");
+        }
+        return await response.json();
     }
-    const body = await response.json()
-    return body;
-}
 
-    const blocksQueryKey = ["blocks"];
+    const getBlocks = async () => {
+        if (sceneId == null) {
+            return [];
+        }
+        const response = await fetch(`/api/blocks?sceneId=${sceneId}`)
+        if (!response.ok) {
+            throw new Error("Failed to load blocks");
+        }
+        const body = await response.json()
+        return body;
+    }
+
+    const blocksQueryKey = ["blocks", sceneId];
     const {data, isPending, isError, error} = useQuery({
         queryKey: blocksQueryKey,
         queryFn: getBlocks,
+        enabled: sceneId != null,
     })
     React.useEffect(() => {
         if (!isPending && isError) {
@@ -104,7 +117,8 @@ const getBlocks = async () => {
             body: JSON.stringify({
                 id: block.id,
                 content: draftBlocks[block.id] ?? block.content ?? "",
-                isLocked: false
+                isLocked: false,
+                sceneId: block.sceneId ?? sceneId,
             }),
         });
 
@@ -177,7 +191,8 @@ const getBlocks = async () => {
             body: JSON.stringify({
                 id: block.id,
                 content: draftBlocks[block.id] ?? block.content ?? "",
-                isLocked
+                isLocked,
+                sceneId: block.sceneId ?? sceneId,
             }),
         });
 
@@ -205,6 +220,16 @@ const getBlocks = async () => {
             throw error;
         }
     })
+
+    React.useEffect(() => {
+        setDraftBlocks({});
+        setChangedBlocks({});
+        setFocusedBlockId(null);
+        setPendingDeleteBlockId(null);
+        setDeleteDialogOpen(false);
+        setPendingUnlockBlock(null);
+        setUnlockDialogOpen(false);
+    }, [sceneId]);
 
     React.useEffect(() => {
         function handleKeyDown(event) {
@@ -317,7 +342,18 @@ const getBlocks = async () => {
 
     return (
         <Box sx={{ height: "100%", overflowY: "auto", overflowX: "visible", p: 2, pl:0.4, boxSizing: "border-box" }}>
-            {isPending ? <CircularProgress /> :
+            <Box sx={{ mb: 2 }}>
+                <Typography variant="overline" color="text.secondary">
+                    Selected
+                </Typography>
+                <Typography variant="h6">
+                    {selectedChapter?.name ?? "No chapter selected"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                    {selectedScene?.name ?? "Select a scene to view its blocks"}
+                </Typography>
+            </Box>
+            {sceneId == null ? null : isPending ? <CircularProgress /> :
                 data && data.map(block => {
 
                     const blockId = block.id;
@@ -426,7 +462,12 @@ const getBlocks = async () => {
                     }
                 })
             }
-            <Button onClick={addBlockMutation.mutate} variant="contained" sx={{ ml: 4.5, mt: 3 }}>
+            <Button
+                onClick={addBlockMutation.mutate}
+                variant="contained"
+                sx={{ ml: 4.5, mt: 3 }}
+                disabled={sceneId == null}
+            >
                 + Block
             </Button>
             <Snackbar

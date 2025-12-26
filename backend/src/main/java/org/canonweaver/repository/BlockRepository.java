@@ -20,7 +20,8 @@ public class BlockRepository {
     private final RowMapper<Block> rowMapper = ((rs, rowNum) -> new Block(
             rs.getLong("id"),
             rs.getString("content"),
-            rs.getBoolean("is_locked")
+            rs.getBoolean("is_locked"),
+            rs.getLong("scene_id")
     ));
 
     public BlockRepository(JdbcTemplate jdbcTemplate) {
@@ -42,10 +43,11 @@ public class BlockRepository {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(con -> {
             PreparedStatement ps = con.prepareStatement("""
-                    INSERT INTO blocks (content, is_locked) VALUES (?, ?)
+                    INSERT INTO blocks (content, is_locked, scene_id) VALUES (?, ?, ?)
                     """, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, block.getContent());
             ps.setBoolean(2, block.isLocked());
+            ps.setLong(3, block.getSceneId());
             return ps;
         }, keyHolder);
         Number key = keyHolder.getKey();
@@ -59,19 +61,29 @@ public class BlockRepository {
         jdbcTemplate.update("""
                 UPDATE blocks
                 SET content = ?,
-                    is_locked = ?
+                    is_locked = ?,
+                    scene_id = ?
                 WHERE id = ?
                 """,
                 block.getContent(),
                 block.isLocked(),
+                block.getSceneId(),
                 block.getId());
     }
 
     public List<Block> findAll() {
         return jdbcTemplate.query("""
-                SELECT id, content, is_locked
+                SELECT id, content, is_locked, scene_id
                 FROM blocks
                 """, rowMapper);
+    }
+
+    public List<Block> findAllBySceneId(Long sceneId) {
+        return jdbcTemplate.query("""
+                SELECT id, content, is_locked, scene_id
+                FROM blocks
+                WHERE scene_id = ?
+                """, rowMapper, sceneId);
     }
 
     public void deleteById(Long id) {

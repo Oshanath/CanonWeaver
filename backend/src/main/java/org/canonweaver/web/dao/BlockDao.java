@@ -13,18 +13,18 @@ public class BlockDao {
 
     public Block toEntity(CreateBlockRequest request) {
         if (request == null) {
-            return new Block(null, null, false);
+            return new Block(null, null, false, null);
         }
         boolean isLocked = request.isLocked() != null && request.isLocked();
-        return new Block(request.id(), request.content(), isLocked);
+        return new Block(request.id(), request.content(), isLocked, request.sceneId());
     }
 
     public Block toEntity(UpdateBlockRequest request) {
-        return new Block(request.id(), request.content(), request.isLocked());
+        return new Block(request.id(), request.content(), request.isLocked(), request.sceneId());
     }
 
     public BlockResponse toResponse(Block block) {
-        return new BlockResponse(block.getId(), block.getContent(), block.isLocked());
+        return new BlockResponse(block.getId(), block.getContent(), block.isLocked(), block.getSceneId());
     }
 
     public List<BlockResponse> toResponses(List<Block> blocks) {

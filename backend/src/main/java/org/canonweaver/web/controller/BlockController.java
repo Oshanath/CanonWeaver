@@ -26,12 +26,15 @@ public class BlockController {
     }
 
     @GetMapping
-    public List<BlockResponse> listBlocks() {
-        return blockDao.toResponses(blockService.findAll());
+    public List<BlockResponse> listBlocks(@RequestParam(required = false) Long sceneId) {
+        if (sceneId == null) {
+            return blockDao.toResponses(blockService.findAll());
+        }
+        return blockDao.toResponses(blockService.findAllBySceneId(sceneId));
     }
 
     @PostMapping
-    public ResponseEntity<BlockResponse> create(@RequestBody(required = false) CreateBlockRequest request) {
+    public ResponseEntity<BlockResponse> create(@Valid @RequestBody CreateBlockRequest request) {
         Block created = blockService.create(blockDao.toEntity(request));
         return ResponseEntity.status(HttpStatus.CREATED).body(blockDao.toResponse(created));
     }

@@ -8,6 +8,8 @@ public record UpdateBlockRequest(
         Long id,
         String content,
         @NotNull(message = "isLocked is required")
-        Boolean isLocked
+        Boolean isLocked,
+        @NotNull(message = "sceneId is required")
+        Long sceneId
 ) {
 }

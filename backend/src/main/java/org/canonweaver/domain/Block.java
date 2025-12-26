@@ -5,15 +5,17 @@ public class Block {
     private Long id;
     private String content;
     private boolean isLocked;
+    private Long sceneId;
 
     public Block() {
 
     }
 
-    public Block(Long id, String content, boolean isLocked) {
+    public Block(Long id, String content, boolean isLocked, Long sceneId) {
         this.id = id;
         this.content = content;
         this.isLocked = isLocked;
+        this.sceneId = sceneId;
     }
 
     public Long getId() {
@@ -38,5 +40,13 @@ public class Block {
 
     public void setLocked(boolean locked) {
         isLocked = locked;
+    }
+
+    public Long getSceneId() {
+        return sceneId;
+    }
+
+    public void setSceneId(Long sceneId) {
+        this.sceneId = sceneId;
     }
 }
