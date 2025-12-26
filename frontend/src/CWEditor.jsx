@@ -348,7 +348,9 @@ const getBlocks = async () => {
                                         }}
                                     >
                                         <Typography variant="body1" component="div">
-                                            {block.content}
+                                            <Box sx={{ whiteSpace: "pre-wrap" }}>
+                                                {block.content}
+                                            </Box>
                                         </Typography>
                                     </Card>
                                     <CWBlockIcons
