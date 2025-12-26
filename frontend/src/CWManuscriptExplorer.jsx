@@ -15,7 +15,13 @@ const orderPrefixStyle = {
 };
 
 const ChapterTreeItemLabel = React.forwardRef(function ChapterTreeItemLabel(props, ref) {
-    const { sortOrder, children, showSceneButton, onAddScene, ...other } = props;
+    const { sortOrder, itemType, children, showSceneButton, onAddScene, ...other } = props;
+
+    const prefix = sortOrder == null
+        ? ""
+        : itemType === "scene"
+            ? `scene-${sortOrder}`
+            : `chapter-${sortOrder}`;
 
     const handleAddSceneClick = (event) => {
         event.stopPropagation();
@@ -25,7 +31,7 @@ const ChapterTreeItemLabel = React.forwardRef(function ChapterTreeItemLabel(prop
     return (
         <TreeItemLabel ref={ref} {...other}>
             <span style={{ display: "flex", alignItems: "center", width: "100%" }}>
-                <span style={orderPrefixStyle}>{sortOrder ?? ""}</span>
+                <span style={orderPrefixStyle}>{prefix}</span>
                 <span style={{ minWidth: 0, flex: 1 }}>{children}</span>
                 {showSceneButton ? (
                     <Button
@@ -43,10 +49,15 @@ const ChapterTreeItemLabel = React.forwardRef(function ChapterTreeItemLabel(prop
 });
 
 const ChapterTreeItemLabelInput = React.forwardRef(function ChapterTreeItemLabelInput(props, ref) {
-    const { sortOrder, style, ...other } = props;
+    const { sortOrder, itemType, style, ...other } = props;
+    const prefix = sortOrder == null
+        ? ""
+        : itemType === "scene"
+            ? `scene-${sortOrder}`
+            : `chapter-${sortOrder}`;
     return (
         <span style={{ display: "flex", alignItems: "center", width: "100%" }}>
-            <span style={orderPrefixStyle}>{sortOrder ?? ""}</span>
+            <span style={orderPrefixStyle}>{prefix}</span>
             <TreeItemLabelInput
                 ref={ref}
                 {...other}
@@ -93,10 +104,16 @@ function ChapterTreeItem(props) {
                 label: {
                     ...externalSlotProps.label,
                     sortOrder,
+                    itemType: item?.type,
                     showSceneButton,
                     onAddScene: handleAddScene,
                 },
-                labelInput: { ...externalSlotProps.labelInput, sortOrder, onFocus: handleLabelInputFocus },
+                labelInput: {
+                    ...externalSlotProps.labelInput,
+                    sortOrder,
+                    itemType: item?.type,
+                    onFocus: handleLabelInputFocus,
+                },
             }}
         />
     );
