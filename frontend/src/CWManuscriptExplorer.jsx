@@ -1,14 +1,14 @@
-import {Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField} from "@mui/material";
+import {Box, Button} from "@mui/material";
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
+import { useRichTreeViewApiRef } from "@mui/x-tree-view/hooks";
 import React from "react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 
 function CWManuscriptExplorer() {
 
     const queryClient = useQueryClient();
-    const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-    const [chapterName, setChapterName] = React.useState("");
-    const chapterNameRef = React.useRef(null);
+    const apiRef = useRichTreeViewApiRef();
+    const [pendingEditId, setPendingEditId] = React.useState(null);
 
     const chaptersQueryKey = ["chapters"];
     const getChapters = async () => {
@@ -36,21 +36,6 @@ function CWManuscriptExplorer() {
         return Number.isFinite(numeric) ? numeric : null;
     }
 
-    function handleDialogEntered() {
-        if (chapterNameRef.current) {
-            chapterNameRef.current.focus();
-        }
-    }
-
-    function openAddChapterDialog() {
-        setChapterName("");
-        setIsDialogOpen(true);
-    }
-
-    function closeAddChapterDialog() {
-        setIsDialogOpen(false);
-    }
-
     const createChapter = async (chapter) => {
         const response = await fetch("/api/chapters", {
             method: "POST",
@@ -64,9 +49,11 @@ function CWManuscriptExplorer() {
     };
     const createChapterMutation = useMutation({
         mutationFn: createChapter,
-        onSuccess: () => {
+        onSuccess: (createdChapter) => {
             queryClient.invalidateQueries({ queryKey: chaptersQueryKey });
-            setIsDialogOpen(false);
+            if (createdChapter?.id != null) {
+                setPendingEditId(String(createdChapter.id));
+            }
         },
         onError: (error) => {
             console.error(error);
@@ -108,12 +95,28 @@ function CWManuscriptExplorer() {
     }
 
     function handleCreateChapter() {
-        const trimmedName = chapterName.trim();
         const nextIndex = chapters.length + 1;
-        const fallbackName = `chapter-${nextIndex}`;
-        const newChapter = { name: trimmedName === "" ? fallbackName : trimmedName };
+        const newChapter = { name: `chapter-${nextIndex}` };
         createChapterMutation.mutate(newChapter);
     }
+
+    function handleLabelInputFocus(event) {
+        if (event.target && typeof event.target.select === "function") {
+            event.target.select();
+        }
+    }
+
+    React.useEffect(() => {
+        if (!pendingEditId) {
+            return;
+        }
+        const exists = chapters.some((chapter) => String(chapter.id) === pendingEditId);
+        if (!exists || !apiRef.current) {
+            return;
+        }
+        apiRef.current.setEditedItem(pendingEditId);
+        setPendingEditId(null);
+    }, [apiRef, chapters, pendingEditId]);
 
     return (
         <Box sx={{ minHeight: 352, minWidth: 250 }}>
@@ -122,16 +125,26 @@ function CWManuscriptExplorer() {
                     variant="contained"
                     size="small"
                     sx={{ textTransform: "none" }}
-                    onClick={openAddChapterDialog}
+                    onClick={handleCreateChapter}
                 >
                     + Chapter
                 </Button>
             </Box>
             <Box sx={{ px: 1, pb: 1 }}>
                 <RichTreeView
+                    apiRef={apiRef}
                     items={items}
                     isItemEditable={() => true}
                     onItemLabelChange={handleRenameChapter}
+                    slotProps={{
+                        item: {
+                            slotProps: {
+                                labelInput: {
+                                    onFocus: handleLabelInputFocus,
+                                },
+                            },
+                        },
+                    }}
                     sx={{
                         "& .MuiTreeItem-content": {
                             minWidth: 0,
@@ -144,33 +157,6 @@ function CWManuscriptExplorer() {
                     }}
                 />
             </Box>
-            <Dialog
-                open={isDialogOpen}
-                onClose={closeAddChapterDialog}
-                maxWidth="sm"
-                fullWidth
-                PaperProps={{ sx: { width: 520 } }}
-                TransitionProps={{ onEntered: handleDialogEntered }}
-            >
-                <DialogTitle>New Chapter</DialogTitle>
-                <DialogContent sx={{ pt: 1 }}>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label="Chapter name"
-                        fullWidth
-                        value={chapterName}
-                        inputRef={chapterNameRef}
-                        onChange={(event) => setChapterName(event.target.value)}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={closeAddChapterDialog}>Cancel</Button>
-                    <Button variant="contained" onClick={handleCreateChapter}>
-                        Create
-                    </Button>
-                </DialogActions>
-            </Dialog>
         </Box>
     );
 }
